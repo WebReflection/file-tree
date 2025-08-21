@@ -14,14 +14,6 @@ export const bytes = (bytes, decimals = 2) => {
   return `${bytes} ${['bytes', 'kB', 'mB', 'gB', 'tB', 'pB', 'eB', 'zB', 'yB'][i]}`;
 };
 
-export const count = (curr, li) => (
-  curr + 1 + (
-    is(li, 'folder') &&
-    is(li, 'opened') ?
-    nested(li.querySelector('ul')) : 0
-  )
-);
-
 export const createElement = (tag, stuff) => assign(document.createElement(tag), stuff);
 
 export const customEvent = (detail, promise = null) => defineProperties(

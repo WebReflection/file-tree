@@ -1,4 +1,4 @@
-import { bytes, count, createElement, customEvent, stopImmediatePropagation, onEnterKey, height, is, parse, path, styleSheet } from './utils.js';
+import { bytes, createElement, customEvent, stopImmediatePropagation, onEnterKey, height, is, parse, path, styleSheet } from './utils.js';
 
 /** @typedef {GlobalFile|File|Folder} Item */
 /** @typedef {string|ArrayBuffer|ArrayBufferView|Blob|File} Content */
@@ -37,6 +37,14 @@ const copy = (item, name) => {
   }
   return new File([item], name, item);
 };
+
+const count = (curr, li) => (
+  curr + 1 + (
+    is(li, 'folder') &&
+    is(li, 'opened') ?
+    nested(li.querySelector('ul')) : 0
+  )
+);
 
 const get = file => {
   const { name, size, type } = file;
