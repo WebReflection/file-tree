@@ -86,7 +86,7 @@ const transitionend = event => {
 };
 
 const interpolateSize = CSS.supports('interpolate-size:allow-keywords');
-const css = await styleSheet(import.meta.url.replace(/\.js\b/, '.css'));
+const css = await styleSheet(import.meta.url.replace(/(\.)?js(\+.+)?$/, '$1css'));
 const nodes = new WeakMap;
 const refs = new WeakMap;
 const _items = Symbol('items');
