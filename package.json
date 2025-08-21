@@ -34,7 +34,7 @@
   ],
   "type": "module",
   "scripts": {
-    "build": "rm -f prod.* && rollup -c build/prod.js",
+    "build": "rm -f prod.* && rollup -c build/prod.js && sed -i 's/assert/with/' prod.js",
     "mime": "just-mime --exclude ^vnd.,^x- > src/mime.js"
   },
   "devDependencies": {
