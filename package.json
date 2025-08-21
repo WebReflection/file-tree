@@ -12,6 +12,12 @@
   "bugs": {
     "url": "https://github.com/WebReflection/file-tree/issues"
   },
+  "exports": {
+    ".": "./src/file-tree.js",
+    "./js": "./prod.js",
+    "./css": "./prod.css",
+    "./package.json": "./package.json"
+  },
   "keywords": [
     "file",
     "tree",
