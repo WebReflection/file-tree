@@ -1,0 +1,45 @@
+{
+  "name": "@webreflection/file-tree",
+  "version": "0.0.0",
+  "description": "A file tree component for the web",
+  "author": "Andrea Giammarchi",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/WebReflection/file-tree.git"
+  },
+  "homepage": "https://github.com/WebReflection/file-tree",
+  "bugs": {
+    "url": "https://github.com/WebReflection/file-tree/issues"
+  },
+  "keywords": [
+    "file",
+    "tree",
+    "component",
+    "web-component",
+    "custom-element"
+  ],
+  "files": [
+    "prod.js",
+    "prod.css",
+    "src",
+    "README.md",
+    "LICENSE"
+  ],
+  "type": "module",
+  "scripts": {
+    "build": "rm -f prod.* && rollup -c build/prod.js",
+    "mime": "just-mime --exclude ^vnd.,^x- > src/mime.js"
+  },
+  "devDependencies": {
+    "@rollup/plugin-node-resolve": "^16.0.1",
+    "@rollup/plugin-terser": "^0.4.4",
+    "just-mime": "^0.4.1",
+    "rollup-plugin-scss": "^4.0.1",
+    "sass": "^1.90.0"
+  },
+  "main": "index.js",
+  "directories": {
+    "test": "test"
+  }
+}

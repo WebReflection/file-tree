@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+  <script type="module">
+    import { Tree, File, Folder } from '../src/file-tree.js';
+
+    document.querySelector('file-tree').addEventListener('click', event => {
+      console.log(event.detail);
+    });
+
+    const tree = new Tree;
+    document.body.appendChild(tree);
+
+    const a = new Folder('a');
+    const b = new Folder('b');
+    a.append('b.txt');
+    b.append('b.txt', 'a.txt');
+    const c = new File([], 'c.txt', { type: 'text/plain' });
+
+    globalThis.a = a;
+    globalThis.b = b;
+    globalThis.c = c;
+    globalThis.tree = tree;
+
+    tree.append(a, c, b, new File([], 'n.txt', { type: 'text/plain' }));
+    tree.addEventListener('click', event => {
+      const { action, folder, path, target } = event.detail;
+      if (folder) {
+        if (action === 'open') {
+          event.waitUntil(new Promise(resolve => setTimeout(resolve, Math.random() * 1000)));
+        }
+      }
+      else {
+        console.log(path);
+      }
+    });
+
+    // setTimeout(() => tree.rename(c), 1000);
+  </script>
+  <style>
+    file-tree {
+      border: 1px dotted rgb(from currentColor r g b / .2);
+      border-radius: 4px;
+      font-family: system-ui, sans-serif;
+      font-size: 1rem;
+      visibility: var(--visibility, hidden);
+    }
+  </style>
+</head> 
+<body>
+  <file-tree>
+    <ul>
+      <li class="file" data-bytes="1000"><button>a_file.txt</button></li>
+      <li class="file"><button>file.bin</button></li>
+      <li class="folder">
+        <button>folder</button>
+        <ul>
+          <li class="file"><button data-details="file.txt">file.txt</button></li>
+          <li class="folder opened">
+            <button>folder</button>
+            <ul>
+              <li class="file" data-type="text/plain"><button>file.txt</button></li>
+              <li class="text"><button>file.txt</button></li>
+              <li class="file"><button>file.svg</button></li>
+              <li class="file"><button>file.png</button></li>
+            </ul>
+          </li>
+          <li class="folder">
+            <button>folder</button>
+            <ul>
+              <li class="file"><button>file.md</button></li>
+              <li class="file"><button>file.txt</button></li>
+              <li class="file"><button>file.txt</button></li>
+              <li class="file"><button>file.txt</button></li>
+              <li class="folder opened">
+                <button>folder</button>
+                <ul>
+                  <li class="file" data-type="text/plain"><button>file.txt</button></li>
+                  <li class="text"><button>file.txt</button></li>
+                  <li class="file"><button>file.txt</button></li>
+                  <li class="file"><button>file.txt</button></li>
+                </ul>
+              </li>
+            </ul>
+          </li>
+        </ul>
+      </li>
+      <li class="file"><button>file.txt</button></li>
+      <li class="file"><button>file.txt</button></li>
+    </ul>
+  </file-tree>
+  <hr>
+</body>
+</html>
