@@ -7,7 +7,7 @@ A file tree component for the web.
 The `<file-tree />` *custom element*, able to bootstrap from existent content or create procedurally any *tree*.
 
 ```js
-import { Tree, Folder, File } from 'https://esm.run/@webreflection/file-tree/prod.js';
+import { Tree, Folder, File } from 'https://cdn.jsdelivr.net/npm/@webreflection/file-tree/prod.js';
 
 const tree = new Tree;
 
@@ -38,7 +38,7 @@ If the *listener* invokes `event.waitUntil(Promise<unknown>):void`, needed to fe
 The abstract interface that can be directly or lazily expanded.
 
 ```js
-import { Tree, Folder, File } from 'https://esm.run/@webreflection/file-tree/prod.js';
+import { Tree, Folder, File } from 'https://cdn.jsdelivr.net/npm/@webreflection/file-tree/prod.js';
 
 const tree = new Tree;
 const assets = new Folder('assets');
@@ -70,7 +70,7 @@ Please note that everything is immutable in here, so that new folders or files n
 This utility is an extend of `globalThis.File` with an automatic `type` inference that can be overridden if explicitly passed as `options` field.
 
 ```js
-import { Tree, Folder, File } from 'https://esm.run/@webreflection/file-tree/prod.js';
+import { Tree, Folder, File } from 'https://cdn.jsdelivr.net/npm/@webreflection/file-tree/prod.js';
 
 // type: text/plain
 const txt = new File(['hello world'], 'hello.txt');
