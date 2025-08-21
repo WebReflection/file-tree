@@ -1,6 +1,6 @@
 # @webreflection/file-tree
 
-A file tree component for the web.
+A file tree component for the web, highly inspired bu Geist UI File-Tree and [its icons](https://www.npmjs.com/package/@geist-ui/icons).
 
 ### Tree
 
