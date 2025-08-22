@@ -1,10 +1,15 @@
 # @webreflection/file-tree
 
-A file tree component for the web, highly inspired by Geist UI File-Tree and [its icons](https://www.npmjs.com/package/@geist-ui/icons).
+A modern, lightweight file tree component for the web, inspired by Geist UI File-Tree and [its icons](https://www.npmjs.com/package/@geist-ui/icons). Built as a custom element with TypeScript support.
 
-### Tree
+## Features
 
-The `<file-tree />` *custom element*, able to bootstrap from existent content or create procedurally any *tree*.
+- 🌳 **Custom Element**: Drop-in `<file-tree>` component
+- 📁 **Hierarchical Structure**: Support for nested folders and files
+- 🎯 **Interactive**: Click, right-click, and keyboard navigation
+- 🔄 **Async Support**: Built-in loading states for dynamic content
+- 📦 **Zero Dependencies**: Pure vanilla JavaScript
+- 🔧 **TypeScript Ready**: Full type definitions included
 
 ```js
 import { Tree, Folder, File } from 'https://cdn.jsdelivr.net/npm/@webreflection/file-tree/prod.js';
@@ -20,7 +25,7 @@ tree.onclick = (event) => {};
 tree.oncontextmenu = (event) => {};
 ```
 
-Each *Tree* implements the whole *Folder* intrface plus a `selected` accessor that returns the last *item* that was selected on such tree and a `query(path: string): Item[] | null` utility to retrieve all items up to the target as a flat list or `null`, if no path is found.
+Each *Tree* implements the whole *Folder* interface plus a `selected` accessor that returns the last *item* that was selected on such tree and a `query(path: string): Item[] | null` utility to retrieve all items up to the target as a flat list or `null`, if no path is found.
 
 As extra feature, *Tree* methods such as `update`, `rename` and `remove` allow passing a path instead of an item to simplify nested tree handling via strings.
 
@@ -54,37 +59,206 @@ tree.append(assets, src);
 src.append(new File([], 'main.js'));
 ```
 
-A *Folder* provides the following accessors:
+## API Reference
 
-  * `items`, aliased as `files`, to retrieve all *items* (that is either *File* or *Folder*) contained in it.
-  * `list` (mostly internal usage) to retrieve the *HTMLUnorderedList* element that is hosting *items* elements.
-  * `name` which is the associated name to this folder.
-  * `size` which is the sum of all items in terms of bytes.
-  * `type` which is exactly the string `"folder"`, there to simplify brand-checking against files.
+### Tree
 
-A *Folder* also provides the following utilities:
+The main file tree component that extends `HTMLElement` and implements the `Folder` interface.
 
-  * `append(...items: (string | object | Item)[]): this` to add one or more *item* to the folder. Strings are converted as empty files or folders, if no extension is provided, objects can have `type`, `name` and `content`.
-  * `remove(...items: Item[]): this` to remove one or more *Item* from the folder.
-  * `rename(item: Item, name?: string): Item | Promise<Item>` to change the name of a specific *Item* (that is either *File* or *Folder*). If no `name` is provided, the *UI* will focus the item as `contentEditable` and it will resolve the returned promise once *Enter* key or *blur* event hapens.
-  * `update(file: File, content: Content | Content[]): File` to change the content of a specific file. 
+#### Properties
 
-Please note that everything is immutable in here, so that new folders or files need to be created in both `rename` and `update` operations, as it's not possible to change `name` or `content` at runtime with native `globalThis.File` interface, so that both methods return the *newly* created *Item* reference.
+- `selected: Item | null` - Returns the last selected item
+- `items: Item[]` - All items in the tree (alias: `files`)
+
+#### Methods
+
+- `append(...items: (string | object | Item)[]): this` - Add items to the tree
+- `remove(...items: Item[]): this` - Remove items from the tree
+- `rename(item: Item, name?: string): Item | Promise<Item>` - Rename an item
+- `update(file: File, content: Content | Content[]): File` - Update file content
+- `query(path: string): Item[] | null` - Get items by path
+
+#### Events
+
+```javascript
+tree.addEventListener('click', (event) => {
+  const { action, folder, originalTarget, owner, path, target } = event.detail;
+  
+  if (action === 'open' && folder) {
+    // Handle folder opening
+    event.waitUntil(loadFolderContent(target));
+  } else if (action === 'click' && !folder) {
+    // Handle file click
+    console.log('File clicked:', path);
+  }
+});
+
+tree.addEventListener('contextmenu', (event) => {
+  const { action, folder, path, target } = event.detail;
+  
+  // Show custom context menu
+  showContextMenu(event, target);
+  event.preventDefault(); // Prevent default browser menu
+});
+```
+
+### Folder
+
+Represents a directory in the file tree.
+
+#### Properties
+
+- `name: string` - Folder name
+- `type: "folder"` - Always returns "folder"
+- `size: number` - Total size of all items in bytes
+- `items: Item[]` - All items in the folder (alias: `files`)
+
+#### Methods
+
+- `append(...items: (string | object | Item)[]): this` - Add items
+- `remove(...items: Item[]): this` - Remove items
+- `rename(item: Item, name?: string): Item | Promise<Item>` - Rename an item
+- `update(file: File, content: Content | Content[]): File` - Update file content
 
 ### File
 
-This utility is an extend of `globalThis.File` with an automatic `type` inference that can be overridden if explicitly passed as `options` field.
+Extends the native `File` class with additional utilities.
 
-```js
-import { Tree, Folder, File } from 'https://cdn.jsdelivr.net/npm/@webreflection/file-tree/prod.js';
+#### Constructor
 
-// type: text/plain
-const txt = new File(['hello world'], 'hello.txt');
-
-// type: application/octet-stream
-const bin = new File(['hello world'], 'hello.txt', { type: 'application/octet-stream' });
+```javascript
+new File(content, name, options?)
 ```
 
-The other convenient utility backed into its constructor is sanitization of the *name* in a *Web compatible way*.
+- `content: Content | Content[]` - File content
+- `name: string` - File name (automatically sanitized)
+- `options?: { type?: string }` - Optional type override
 
-Native, plain, *File* reference can also be passed directly to all methods but their *name* will be sanitized and their reference, but not their content, will be discarded.
+#### Example
+
+```javascript
+// Text file (type inferred from extension)
+const readme = new File(['# My Project'], 'README.md');
+
+// Binary file with explicit type
+const image = new File([''], 'logo.png', { type: 'image/png' });
+
+// Custom type
+const config = new File(['{"key": "value"}'], 'config.json', { 
+  type: 'application/json' 
+});
+```
+
+## Event Details
+
+When items are clicked or right-clicked, a `CustomEvent` is dispatched with the following detail properties:
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `action` | `"open" \| "close" \| "click"` | Action performed (`open`/`close` for folders, `click` for files) |
+| `folder` | `boolean` | Whether the item is a folder |
+| `originalTarget` | `HTMLLIElement` | The `<li>` element representing the item |
+| `owner` | `Folder` | Parent folder containing the item |
+| `path` | `string` | Full path in web-compatible format (e.g., `src/components/Button.jsx`) |
+| `target` | `File \| Folder` | The actual file or folder object |
+
+### Async Operations
+
+Use `event.waitUntil()` for asynchronous operations:
+
+```javascript
+tree.addEventListener('click', (event) => {
+  const { action, folder, target } = event.detail;
+  
+  if (action === 'open' && folder) {
+    // Load folder content asynchronously
+    event.waitUntil(
+      fetchFolderContent(target.name).then(content => {
+        content.forEach(item => target.append(item));
+      })
+    );
+  }
+});
+```
+
+## Examples
+
+### Dynamic File Loading
+
+```javascript
+tree.addEventListener('click', async (event) => {
+  const { action, folder, target } = event.detail;
+  
+  if (action === 'open' && folder) {
+    event.waitUntil(
+      fetch(`/api/files/${target.name}`)
+        .then(response => response.json())
+        .then(files => {
+          files.forEach(file => {
+            if (file.type === 'folder') {
+              target.append(new Folder(file.name));
+            } else {
+              target.append(new File([file.content], file.name, { 
+                type: file.mimeType 
+              }));
+            }
+          });
+        })
+    );
+  }
+});
+```
+
+### Tree File Operations
+
+```javascript
+// Rename a file and get the new one
+const renamedFile = tree.rename('src/main.js', 'app.js');
+
+// Update file content and get the new file
+const updatedFile = tree.update('src/app.js', ['console.log("Updated!")']);
+
+// Remove a folder or file
+tree.remove('src/components');
+```
+
+### Bootstrap from HTML
+
+```html
+<file-tree>
+  <ul>
+    <li class="file" data-bytes="1024">
+      <button>package.json</button>
+    </li>
+    <li class="folder">
+      <button>src</button>
+      <ul>
+        <li class="file" data-type="text/javascript">
+          <button>index.js</button>
+        </li>
+        <li class="folder opened">
+          <button>components</button>
+          <ul>
+            <li class="file">
+              <button>Button.jsx</button>
+            </li>
+          </ul>
+        </li>
+      </ul>
+    </li>
+  </ul>
+</file-tree>
+```
+
+## Browser Support
+
+- Chrome 67+
+- Firefox 63+
+- Safari 11.1+
+- Edge 79+
+
+## License
+
+Geist UI Icons are under MIT license, here slightly modified for this project purpose.
+
+Everything else is under MIT © [Andrea Giammarchi](https://github.com/WebReflection).
