@@ -29,19 +29,25 @@ export const customEvent = (detail, promise = null) => defineProperties(
   }
 );
 
-export const stopImmediatePropagation = event => {
-  event.stopImmediatePropagation();
+export const duplicated = (name, folder) => {
+  throw new Error(`Item ${name} already exists in folder ${folder.name}`);
 };
+
+export const error = (item, folder) => {
+  throw new Error(`Item ${item.name} not found in folder ${folder.name}`);
+};
+
+export const height = el => getComputedStyle(el).height;
+
+export const is = (el, kind) => !!el?.classList?.contains?.(kind);
+
+export const known = (list, name) => list.some(i => i.name === name);
 
 export const onEnterKey = event => {
   if (event.key === 'Enter') {
     event.currentTarget.blur();
   }
 };
-
-export const height = el => getComputedStyle(el).height;
-
-export const is = (el, kind) => !!el?.classList?.contains?.(kind);
 
 export const parse = name => {
   const dot = name.lastIndexOf('.');
@@ -57,6 +63,10 @@ export const path = li => {
   while (li = li.parentNode?.closest('li'))
     chunks.unshift(li.querySelector('button').textContent);
   return chunks.join('/');
+};
+
+export const stopImmediatePropagation = event => {
+  event.stopImmediatePropagation();
 };
 
 export const styleSheet = async url => {

@@ -8,7 +8,8 @@
     import { Tree, File, Folder } from '../prod.js';
 
     document.querySelector('file-tree').addEventListener('click', event => {
-      console.log(event.detail);
+      const { action, folder, owner, path, target } = event.detail;
+      console.log({ action, folder, owner, path, target });
     });
 
     const tree = new Tree;
@@ -25,7 +26,7 @@
     globalThis.c = c;
     globalThis.tree = tree;
 
-    tree.append(a, c, b, new File([], 'n.txt', { type: 'text/plain' }));
+    tree.append(a, c, b, { name: 'n.txt' });
     tree.addEventListener('click', event => {
       const { action, folder, path, target } = event.detail;
       if (folder) {
@@ -38,7 +39,7 @@
       }
     });
 
-    // setTimeout(() => tree.rename(c), 1000);
+    setTimeout(() => tree.rename(c), 1000);
   </script>
   <style>
     file-tree {

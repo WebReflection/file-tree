@@ -26,6 +26,8 @@ When an *item* is clicked, the optional *click* event handler will be dispatched
 
   * `action: "open" | "close" | "click"` where `open` or `close` are *folders* only while `click` is for files.
   * `folder: boolean` indicating if the *item* is a folder.
+  * `originalTarget` which is the `<li>` element representing the *target* *File* or *Folder*
+  * `owner` which is the parent folder needed to operate with the *target* (remove, rename, update).
   * `path: string` to retrieve the whole path in *Web compat* format, such as: `some/path/file.txt`.
   * `target: File | Folder` which is the related *file* or *folder* reference that was clicked.
 

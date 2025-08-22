@@ -1,4 +1,4 @@
-import { bytes, createElement, customEvent, stopImmediatePropagation, onEnterKey, height, is, parse, path, styleSheet } from './utils.js';
+import { bytes, createElement, customEvent, duplicated, error, height, is, known, onEnterKey, parse, path, stopImmediatePropagation, styleSheet } from './utils.js';
 
 /** @typedef {GlobalFile|File|Folder} Item */
 /** @typedef {string|ArrayBuffer|ArrayBufferView|Blob|File} Content */
@@ -103,6 +103,7 @@ let transitioning = false;
 let selected = null;
 
 export class File extends GlobalFile {
+  /** @extends {GlobalFile} */
   constructor(bits, name, options) {
     const details = parse(name);
     get(super([].concat(bits), details.name, { type: details.type, ...options }));
@@ -204,7 +205,9 @@ export class Folder {
     const list = this[_items];
     for (const item of items) {
       if (selected === item) selected = null;
-      list.splice(list.indexOf(item), 1);
+      const i = list.indexOf(item);
+      if (i < 0) error(item, this);
+      list.splice(i, 1);
       const li = nodes.get(item);
       nodes.delete(item);
       refs.delete(li);
@@ -219,28 +222,41 @@ export class Folder {
    * @returns {Item | Promise<Item>}
    */
   rename(item, name = '') {
+    const list = this[_items];
+    if (!list.includes(item)) error(item, this);
     name = name.trim();
     if (name) {
+      if (known(list, name)) duplicated(name, this);
       const newItem = copy(item, name);
       this.remove(item).append(newItem);
       return focused(newItem);
     }
     else {
-      const button = nodes.get(item).querySelector('button');
+      const li = nodes.get(item);
+      const button = li.querySelector('button');
+      const input = () => {
+        li.classList.toggle('error', known(list, button.textContent.trim()));
+      };
       name = button.textContent.trim();
       button.addEventListener('click', stopImmediatePropagation);
       button.addEventListener('keydown', onEnterKey);
+      button.addEventListener('input', input);
       button.setAttribute('role', 'textbox');
       button.contentEditable = true;
       return new Promise(resolve => {
         button.addEventListener('blur', () => {
           button.removeEventListener('click', stopImmediatePropagation);
           button.removeEventListener('keydown', onEnterKey);
+          button.removeEventListener('input', input);
           button.removeAttribute('role');
           button.contentEditable = false;
           const newName = button.textContent.trim();
           if (name === newName) resolve(focused(item));
           else {
+            if (known(list, newName)) {
+              button.textContent = name;
+              duplicated(newName, this);
+            }
             const newItem = copy(item, newName);
             this.remove(item).append(newItem);
             resolve(focused(newItem));
@@ -258,9 +274,11 @@ export class Folder {
    */
   update(file, content) {
     const list = this[_items];
-    return (list[list.indexOf(file)] = replace(
+    const i = list.indexOf(file);
+    if (i < 0) error(file, this);
+    return (list[i] = replace(
       file,
-      new File([].concat(content), item.name, item)
+      new File(content, item.name, item)
     ));
   }
 }
@@ -348,6 +366,11 @@ async function click(event) {
   const folder = is(li, 'folder');
   const action = folder ? (is(li, 'opened') ? 'close' : 'open') : 'click';
   event = customEvent({
+    get owner() {
+      const folder = li.parentNode.closest('li');
+      return folder ? refs.get(folder) : li.closest(':host > ul').parentNode.host;
+    },
+    originalTarget: li,
     path: path(li),
     action,
     folder,

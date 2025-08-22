@@ -12,9 +12,16 @@
   "bugs": {
     "url": "https://github.com/WebReflection/file-tree/issues"
   },
+  "types": "./types/file-tree.d.ts",
   "exports": {
-    ".": "./src/file-tree.js",
-    "./js": "./prod.js",
+    ".": {
+      "import": "./src/file-tree.js",
+      "types": "./types/file-tree.d.ts"
+    },
+    "./js": {
+      "import": "./prod.js",
+      "types": "./types/file-tree.d.ts"
+    },
     "./css": "./prod.css",
     "./package.json": "./package.json"
   },
@@ -35,14 +42,16 @@
   "type": "module",
   "scripts": {
     "build": "rm -f prod.* && rollup -c build/prod.js && sed -i 's/assert/with/' prod.js",
-    "mime": "just-mime --exclude ^vnd.,^x- > src/mime.js"
+    "mime": "just-mime --exclude ^vnd.,^x- > src/mime.js",
+    "types": "rm -rf types && tsc --allowJs --lib dom,esnext --moduleResolution nodenext --module NodeNext --target esnext -d --emitDeclarationOnly --outDir ./types ./src/*.js"
   },
   "devDependencies": {
     "@rollup/plugin-node-resolve": "^16.0.1",
     "@rollup/plugin-terser": "^0.4.4",
     "just-mime": "^0.4.1",
     "rollup-plugin-scss": "^4.0.1",
-    "sass": "^1.90.0"
+    "sass": "^1.90.0",
+    "typescript": "^5.9.2"
   },
   "main": "index.js",
   "directories": {
