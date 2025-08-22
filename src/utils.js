@@ -51,6 +51,13 @@ export const onEnterKey = event => {
   }
 };
 
+export const pair = (owner, chunks) => (
+  chunks.length === 1 ?
+    [owner, chunks[0]] :
+    [chunks.at(-2), chunks.at(-1)]
+);
+
+
 export const parse = name => {
   const dot = name.lastIndexOf('.');
   const ext = name.slice(dot);

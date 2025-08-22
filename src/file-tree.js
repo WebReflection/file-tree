@@ -9,6 +9,7 @@ import {
   is,
   known,
   onEnterKey,
+  pair,
   parse,
   path,
   stopImmediatePropagation,
@@ -70,13 +71,13 @@ const convert = li => {
   return new File(['\x00'.repeat(+li.dataset.bytes || 0)], name);
 };
 
-const copy = (item, name) => {
+const copy = (list, item, name) => {
   if (item instanceof Folder) {
     const folder = new Folder(name);
-    folder.append(...item[_items]);
+    folder.append(...list);
     return folder;
   }
-  return new File([item], name, item);
+  return new File([item], name);
 };
 
 const count = (curr, li) => (
@@ -134,11 +135,14 @@ const transitionend = event => {
     ul.style.height = is(ul.parentElement, 'opened') ? 'auto' : '0px';
 };
 
+const updateCount = (self, length) => {
+  nodes.get(self).querySelector('button').dataset.items = `${length} item${length === 1 ? '' : 's'}`;
+};
+
 const interpolateSize = CSS.supports('interpolate-size:allow-keywords');
 const css = await styleSheet(import.meta.url.replace(/(\.)?js(\+.+)?$/, '$1css'));
 const nodes = new WeakMap;
 const refs = new WeakMap;
-const _items = Symbol('items');
 
 let transitioning = false;
 let selected = null;
@@ -153,7 +157,7 @@ export class File extends GlobalFile {
 
 export class Folder {
   /** @type {Item[]} */
-  [_items] = [];
+  #items = [];
 
   /** @type {string} the name of the folder */
   #name;
@@ -177,7 +181,7 @@ export class Folder {
   get files() { return this.items }
 
   /** @type {Item[]} a copy ofall items within the folder */
-  get items() { return this[_items].slice(0) }
+  get items() { return this.#items.slice(0) }
 
   /** @type {HTMLUListElement} the UL element where the items are listed */
   get list() { return this.#ul }
@@ -186,7 +190,7 @@ export class Folder {
   get name() { return this.#name }
 
   /** @type {number} the total amount of bytes within the folder */
-  get size() { return this[_items].reduce((acc, file) => acc + file.size, 0) }
+  get size() { return this.#items.reduce((acc, file) => acc + file.size, 0) }
 
   /** @type {'folder'} */
   get type() { return 'folder' }
@@ -196,7 +200,7 @@ export class Folder {
    * @returns
    */
   append(...items) {
-    const list = this[_items];
+    const list = this.#items;
     for (let file of items) {
       if (typeof file === 'string') {
         // .folder or folder
@@ -228,7 +232,7 @@ export class Folder {
       this.#ul.appendChild(get(file));
     }
     const { length } = list;
-    nodes.get(this).querySelector('button').dataset.items = `${length} item${length === 1 ? '' : 's'}`;
+    updateCount(this, length);
     list.sort(ordered);
     for (let { children } = this.#ul, i = 0; i < length; i++) {
       const item = list[i];
@@ -243,7 +247,7 @@ export class Folder {
    * @returns
    */
   remove(...items) {
-    const list = this[_items];
+    const list = this.#items;
     for (const item of items) {
       if (selected === item) selected = null;
       const i = list.indexOf(item);
@@ -253,6 +257,7 @@ export class Folder {
       nodes.delete(item);
       refs.delete(li);
       li.remove();
+      updateCount(this, list.length);
     }
     return this;
   }
@@ -263,12 +268,12 @@ export class Folder {
    * @returns {Item | Promise<Item>}
    */
   rename(item, name = '') {
-    const list = this[_items];
+    const list = this.#items;
     if (!list.includes(item)) error(item, this);
     name = name.trim();
     if (name) {
       if (known(list, name)) duplicated(name, this);
-      const newItem = copy(item, name);
+      const newItem = copy(list, item, name);
       this.remove(item).append(newItem);
       return focused(newItem);
     }
@@ -298,7 +303,7 @@ export class Folder {
               button.textContent = name;
               duplicated(newName, this);
             }
-            const newItem = copy(item, newName);
+            const newItem = copy(list, item, newName);
             this.remove(item).append(newItem);
             resolve(focused(newItem));
           }
@@ -314,13 +319,10 @@ export class Folder {
    * @returns {File|GlobalFile} the new file with the updated content
    */
   update(file, content) {
-    const list = this[_items];
+    const list = this.#items;
     const i = list.indexOf(file);
     if (i < 0) error(file, this);
-    return (list[i] = replace(
-      file,
-      new File(content, item.name, item)
-    ));
+    return (list[i] = replace(file, new File(content, file.name, file)));
   }
 }
 
@@ -348,7 +350,7 @@ export class Tree extends HTMLElement {
   get files() { return this.#root.files }
   get items() { return this.#root.items }
   get list() { return this.#root.list }
-  get name() { return this.#root.name }
+  get name() { return '#root' }
   get size() { return this.#root.size }
   get type() { return this.#root.type }
 
@@ -365,30 +367,65 @@ export class Tree extends HTMLElement {
   }
 
   /**
+   * @param {string} path
+   * @returns {Item[]?}
+   */
+  query(path) {
+    const chunks = [];
+    let { items } = this, item;
+    for (const name of path.split('/')) {
+      item = items.find(i => i.name === name);
+      if (!item) return null;
+      if (item instanceof Folder) ({ items } = item);
+      chunks.push(item);
+    }
+    return chunks;
+  }
+
+  /**
    * @param  {...Item} items
    * @returns
    */
   remove(...items) {
-    this.#root.remove(...items);
+    let owner = this.#root, item;
+    if (items.length === 1 && typeof items[0] === 'string') {
+      const chunks = this.query(items[0]);
+      if (!chunks) error({ name: items[0] }, this);
+      [owner, item] = pair(owner, chunks);
+      items = [item];
+    }
+    owner.remove(...items);
     return this;
   }
 
   /**
-   * @param {Item} item
+   * @param {string|Item} item
    * @param {string} [name]
    * @returns
    */
   rename(item, name = '') {
-    return this.#root.rename(item, name);
+    let owner = this.#root;
+    if (typeof item === 'string') {
+      const chunks = this.query(item);
+      if (!chunks) error({ name: item }, this);
+      [owner, item] = pair(owner, chunks);
+    }
+    return owner.rename(item, name);
   }
 
   /**
-   * @param {File|GlobalFile} file
+   * @param {string|File|GlobalFile} file
    * @param {Content|Content[]} content
    * @returns
    */
   update(file, content) {
-    return this.#root.update(file, content);
+    let owner = this.#root;
+    if (typeof file === 'string') {
+      const chunks = this.query(file);
+      if (!chunks) error({ name: file }, this);
+      [owner, file] = pair(owner, chunks);
+    }
+    return owner.update(file, content);
   }
 }
 

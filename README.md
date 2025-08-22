@@ -20,7 +20,9 @@ tree.onclick = (event) => {};
 tree.oncontextmenu = (event) => {};
 ```
 
-Each *Tree* implements the whole *Folder* intrface plus a `selected` accessor that returns the last *item* that was selected on such tree.
+Each *Tree* implements the whole *Folder* intrface plus a `selected` accessor that returns the last *item* that was selected on such tree and a `query(path: string): Item[] | null` utility to retrieve all items up to the target as a flat list or `null`, if no path is found.
+
+As extra feature, *Tree* methods such as `update`, `rename` and `remove` allow passing a path instead of an item to simplify nested tree handling via strings.
 
 #### Tree Click or ContextMenu Event
 
