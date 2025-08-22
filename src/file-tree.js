@@ -1,4 +1,19 @@
-import { bytes, createElement, customEvent, duplicated, error, height, is, known, onEnterKey, parse, path, stopImmediatePropagation, styleSheet } from './utils.js';
+import {
+  bytes,
+  createElement,
+  customEvent,
+  defineProperties,
+  duplicated,
+  error,
+  height,
+  is,
+  known,
+  onEnterKey,
+  parse,
+  path,
+  stopImmediatePropagation,
+  styleSheet,
+} from './utils.js';
 
 /** @typedef {GlobalFile|File|Folder} Item */
 /** @typedef {string|ArrayBuffer|ArrayBufferView|Blob|File} Content */
@@ -18,6 +33,32 @@ import { bytes, createElement, customEvent, duplicated, error, height, is, known
 
 const { at, map, reduce } = Array.prototype;
 const { File: GlobalFile } = globalThis;
+
+const bootstrap = event => {
+  stopImmediatePropagation(event);
+  const { type } = event;
+  const li = event.target?.closest('li');
+  const button = li?.querySelector('button');
+  if (!li || button?.disabled || transitioning) return;
+  const target = refs.get(li);
+  const folder = is(li, 'folder');
+  const action = type === 'click' && folder ? (is(li, 'opened') ? 'close' : 'open') : type;
+  return [
+    li.closest(':host > ul').parentNode.host,
+    li, button, folder,
+    customEvent(type, {
+      get owner() {
+        const folder = li.parentNode.closest('li');
+        return folder ? refs.get(folder) : li.closest(':host > ul').parentNode.host;
+      },
+      originalTarget: li,
+      path: path(li),
+      action,
+      folder,
+      target,
+    })
+  ];
+};
 
 const convert = li => {
   const name = li.querySelector('button').textContent.trim();
@@ -297,6 +338,7 @@ export class Tree extends HTMLElement {
       this.append(...map.call(prev.children, convert));
     }
     list.addEventListener('click', click);
+    list.addEventListener('contextmenu', contextmenu);
     shadowRoot.replaceChildren(list);
     if (data) {
       // TODO: parse data to create a tree structure
@@ -357,31 +399,16 @@ customElements.define('file-tree', Tree);
  * @returns {Promise<void>}
  */
 async function click(event) {
-  stopImmediatePropagation(event);
   event.preventDefault();
-  const li = event.target?.closest('li');
-  const button = li?.querySelector('button');
-  if (!li || button?.disabled || transitioning) return;
-  const target = refs.get(li);
-  const folder = is(li, 'folder');
-  const action = folder ? (is(li, 'opened') ? 'close' : 'open') : 'click';
-  event = customEvent({
-    get owner() {
-      const folder = li.parentNode.closest('li');
-      return folder ? refs.get(folder) : li.closest(':host > ul').parentNode.host;
-    },
-    originalTarget: li,
-    path: path(li),
-    action,
-    folder,
-    target,
-  });
-  li.closest(':host > ul').parentNode.host.dispatchEvent(event);
-  if (event.defaultPrevented) return;
-  if (event.async) {
+  const details = bootstrap(event);
+  if (!details) return;
+  const [host, li, button, folder, customEvent] = details;
+  host.dispatchEvent(customEvent);
+  if (customEvent.defaultPrevented) return;
+  if (customEvent.async) {
     li.classList.add('waiting');
     li.classList.remove('error');
-    try { await event }
+    try { await customEvent }
     catch {
       li.classList.add('error');
       return;
@@ -406,4 +433,13 @@ async function click(event) {
     li.classList.toggle('opened');
   }
   if (button !== document.activeElement) button.focus();
+}
+
+function contextmenu(event) {
+  const details = bootstrap(event);
+  if (details) {
+    details[0].dispatchEvent(defineProperties(details.pop(), {
+      preventDefault: { value: () => event.preventDefault() },
+    }));
+  }
 }

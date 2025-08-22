@@ -16,13 +16,15 @@ tree.append(new File([], 'test.txt'));
 
 // will provide details once an Item is clicked
 tree.onclick = (event) => {};
+// will provide details once an Item is right-clicked
+tree.oncontextmenu = (event) => {};
 ```
 
 Each *Tree* implements the whole *Folder* intrface plus a `selected` accessor that returns the last *item* that was selected on such tree.
 
-#### Tree Click Event
+#### Tree Click or ContextMenu Event
 
-When an *item* is clicked, the optional *click* event handler will be dispatched via `CustomEvent` and its `detail` property:
+When an *item* is clicked, or right-clicked, the optional *click* / *contextmenu* event handler will be dispatched via `CustomEvent` and its `detail` property:
 
   * `action: "open" | "close" | "click"` where `open` or `close` are *folders* only while `click` is for files.
   * `folder: boolean` indicating if the *item* is a folder.
@@ -31,9 +33,9 @@ When an *item* is clicked, the optional *click* event handler will be dispatched
   * `path: string` to retrieve the whole path in *Web compat* format, such as: `some/path/file.txt`.
   * `target: File | Folder` which is the related *file* or *folder* reference that was clicked.
 
-If the *listener* invokes `event.preventDefault()` the logic won't do anything else.
+If the *listener* invokes `event.preventDefault()` the logic won't do anything else or, in the `contextmenu` case, it will prevent the default menu from appearing.
 
-If the *listener* invokes `event.waitUntil(Promise<unknown>):void`, needed to fetch the *folder* or *file* content asynchronously, as example, the *UI* will hint something is waiting to happen and it will finish once that promise has been resolved.
+If the *click* *listener* invokes `event.waitUntil(Promise<unknown>):void`, needed to fetch the *folder* or *file* content asynchronously, as example, the *UI* will hint something is waiting to happen and it will finish once that promise has been resolved.
 
 ### Folder
 

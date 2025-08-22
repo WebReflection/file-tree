@@ -27,6 +27,11 @@
     globalThis.tree = tree;
 
     tree.append(a, c, b, { name: 'n.txt' });
+    tree.addEventListener('contextmenu', event => {
+      const { action, folder, path, target } = event.detail;
+      console.log({ action, folder, path, target });
+      event.preventDefault();
+    });
     tree.addEventListener('click', event => {
       const { action, folder, path, target } = event.detail;
       if (folder) {

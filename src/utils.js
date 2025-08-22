@@ -16,8 +16,8 @@ export const bytes = (bytes, decimals = 2) => {
 
 export const createElement = (tag, stuff) => assign(document.createElement(tag), stuff);
 
-export const customEvent = (detail, promise = null) => defineProperties(
-  new CustomEvent('click', {
+export const customEvent = (type, detail, promise = null) => defineProperties(
+  new CustomEvent(type, {
     detail,
     bubbles: true,
     cancelable: true,
@@ -28,6 +28,8 @@ export const customEvent = (detail, promise = null) => defineProperties(
     async: { get: () => !!promise },
   }
 );
+
+export { defineProperties };
 
 export const duplicated = (name, folder) => {
   throw new Error(`Item ${name} already exists in folder ${folder.name}`);
