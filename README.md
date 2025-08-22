@@ -11,6 +11,8 @@ A modern, lightweight file tree component for the web, inspired by Geist UI File
 - 📦 **Zero Dependencies**: Pure vanilla JavaScript
 - 🔧 **TypeScript Ready**: Full type definitions included
 
+**[Live Demo](https://webreflection.github.io/file-tree/test/)**
+
 ```js
 import { Tree, Folder, File } from 'https://cdn.jsdelivr.net/npm/@webreflection/file-tree/prod.js';
 
