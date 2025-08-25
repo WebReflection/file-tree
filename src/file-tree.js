@@ -367,10 +367,10 @@ export class Tree extends HTMLElement {
       const [path, content] = items;
       const chunks = path.split('/');
       const name = chunks.pop();
-      for (const name of chunks) {
-        item = items.find(i => i.name === name);
+      for (const chunk of chunks) {
+        item = items.find(i => i.name === chunk);
         if (!item) {
-          item = new Folder(name);
+          item = new Folder(chunk);
           owner.append(item);
         }
         owner = item;
