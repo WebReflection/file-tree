@@ -362,7 +362,22 @@ export class Tree extends HTMLElement {
    * @returns
    */
   append(...items) {
-    this.#root.append(...items);
+    let owner = this.#root, item;
+    if (items.length === 2 && typeof items[0] === 'string') {
+      const [path, content] = items;
+      const chunks = path.split('/');
+      const name = chunks.pop();
+      for (const name of chunks) {
+        item = items.find(i => i.name === name);
+        if (!item) {
+          item = new Folder(name);
+          owner.append(item);
+        }
+        owner = item;
+      }
+      items = [new File(content, name)];
+    }
+    owner.append(...items);
     return this;
   }
 
