@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ARIA Roles Test</title>
+  <script type="module">
+    import { Tree, File, Folder } from '../src/file-tree.js';
+
+    // Create a test tree structure
+    const tree = new Tree();
+    const folder1 = new Folder('Documents');
+    const folder2 = new Folder('Images');
+    const file1 = new File(['content'], 'readme.txt');
+    const file2 = new File(['content'], 'photo.jpg');
+    
+    folder1.append(file1);
+    folder2.append(file2);
+    tree.append(folder1, folder2);
+    
+    document.body.appendChild(tree);
+
+    // Test ARIA roles after DOM is ready
+    setTimeout(() => {
+      console.log('Testing ARIA roles...');
+      
+      // Test root ul has role="tree"
+      const rootUl = tree.shadowRoot.querySelector('ul');
+      console.log('Root ul role:', rootUl.getAttribute('role')); // Should be "tree"
+      
+      // Test all li elements have role="treeitem"
+      const allLis = tree.shadowRoot.querySelectorAll('li');
+      console.log('All li elements with treeitem role:');
+      allLis.forEach((li, index) => {
+        const role = li.getAttribute('role');
+        const buttonText = li.querySelector('button').textContent;
+        console.log(`  ${index + 1}. "${buttonText}" - role: ${role}`); // Should be "treeitem"
+      });
+      
+      // Test nested ul elements have role="group"
+      const nestedUls = tree.shadowRoot.querySelectorAll('li ul');
+      console.log('Nested ul elements with group role:');
+      nestedUls.forEach((ul, index) => {
+        const role = ul.getAttribute('role');
+        console.log(`  ${index + 1}. Nested ul - role: ${role}`); // Should be "group"
+      });
+      
+      // Verify requirements
+      const rootHasTreeRole = rootUl.getAttribute('role') === 'tree';
+      const allLisHaveTreeitemRole = Array.from(allLis).every(li => li.getAttribute('role') === 'treeitem');
+      const allNestedUlsHaveGroupRole = Array.from(nestedUls).every(ul => ul.getAttribute('role') === 'group');
+      
+      console.log('\n=== ARIA ROLES VERIFICATION ===');
+      console.log('✓ Root ul has role="tree":', rootHasTreeRole);
+      console.log('✓ All li elements have role="treeitem":', allLisHaveTreeitemRole);
+      console.log('✓ All nested ul elements have role="group":', allNestedUlsHaveGroupRole);
+      
+      if (rootHasTreeRole && allLisHaveTreeitemRole && allNestedUlsHaveGroupRole) {
+        console.log('\n🎉 ALL ARIA ROLES CORRECTLY IMPLEMENTED!');
+      } else {
+        console.log('\n❌ Some ARIA roles are missing or incorrect');
+      }
+    }, 100);
+  </script>
+  <style>
+    file-tree {
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      font-family: system-ui, sans-serif;
+      font-size: 1rem;
+      padding: 10px;
+      display: block;
+      width: 300px;
+    }
+  </style>
+</head>
+<body>
+  <h1>ARIA Roles Test</h1>
+  <p>Check the console for test results.</p>
+</body>
+</html>

@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ARIA Current Test</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+    }
+    .test-section {
+      margin: 20px 0;
+      padding: 15px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+    .test-result {
+      margin: 10px 0;
+      padding: 10px;
+      border-radius: 3px;
+    }
+    .pass {
+      background-color: #d4edda;
+      color: #155724;
+      border: 1px solid #c3e6cb;
+    }
+    .fail {
+      background-color: #f8d7da;
+      color: #721c24;
+      border: 1px solid #f5c6cb;
+    }
+    button {
+      margin: 5px;
+      padding: 8px 12px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <h1>ARIA Current Test</h1>
+  
+  <div class="test-section">
+    <h2>File Tree</h2>
+    <file-tree id="tree"></file-tree>
+  </div>
+
+  <div class="test-section">
+    <h2>Test Controls</h2>
+    <button onclick="setCurrent('folder1/file1.txt')">Set file1.txt as current</button>
+    <button onclick="setCurrent('folder2')">Set folder2 as current</button>
+    <button onclick="setCurrent(null)">Clear current</button>
+    <button onclick="runTests()">Run All Tests</button>
+  </div>
+
+  <div class="test-section">
+    <h2>Test Results</h2>
+    <div id="results"></div>
+  </div>
+
+  <script type="module">
+    import { Tree, Folder, File } from '../src/file-tree.js';
+
+    const tree = document.getElementById('tree');
+    
+    // Create test structure
+    tree.append(
+      new Folder('folder1').append(
+        new File([], 'file1.txt'),
+        new File([], 'file2.txt')
+      ),
+      new Folder('folder2').append(
+        new File([], 'file3.txt')
+      ),
+      new File([], 'root-file.txt')
+    );
+
+    window.setCurrent = (path) => {
+      tree.setCurrent(path);
+      updateCurrentDisplay();
+    };
+
+    function updateCurrentDisplay() {
+      const current = tree.currentTarget;
+      console.log('Current target:', current?.name || 'none');
+    }
+
+    function runTest(name, testFn) {
+      try {
+        const result = testFn();
+        return { name, passed: result, error: null };
+      } catch (error) {
+        return { name, passed: false, error: error.message };
+      }
+    }
+
+    function displayResults(results) {
+      const resultsDiv = document.getElementById('results');
+      resultsDiv.innerHTML = '';
+      
+      results.forEach(result => {
+        const div = document.createElement('div');
+        div.className = `test-result ${result.passed ? 'pass' : 'fail'}`;
+        div.innerHTML = `
+          <strong>${result.name}</strong>: ${result.passed ? 'PASS' : 'FAIL'}
+          ${result.error ? `<br>Error: ${result.error}` : ''}
+        `;
+        resultsDiv.appendChild(div);
+      });
+    }
+
+    window.runTests = () => {
+      const results = [];
+
+      // Test 1: Setting aria-current on a file
+      results.push(runTest('Set aria-current on file', () => {
+        tree.setCurrent('folder1/file1.txt');
+        const file1 = tree.query('folder1/file1.txt')[1];
+        const li = tree.list.querySelector('li[aria-current="true"]');
+        return li && li.textContent.includes('file1.txt') && tree.currentTarget === file1;
+      }));
+
+      // Test 2: Only one item has aria-current at a time
+      results.push(runTest('Only one aria-current at a time', () => {
+        tree.setCurrent('folder2');
+        const currentItems = tree.list.querySelectorAll('[aria-current="true"]');
+        return currentItems.length === 1 && currentItems[0].textContent.includes('folder2');
+      }));
+
+      // Test 3: Clearing aria-current
+      results.push(runTest('Clear aria-current', () => {
+        tree.setCurrent(null);
+        const currentItems = tree.list.querySelectorAll('[aria-current="true"]');
+        return currentItems.length === 0 && tree.currentTarget === null;
+      }));
+
+      // Test 4: Setting aria-current by item object
+      results.push(runTest('Set aria-current by item object', () => {
+        const rootFile = tree.items.find(item => item.name === 'root-file.txt');
+        tree.setCurrent(rootFile);
+        const li = tree.list.querySelector('li[aria-current="true"]');
+        return li && li.textContent.includes('root-file.txt') && tree.currentTarget === rootFile;
+      }));
+
+      // Test 5: aria-current works with aria-selected
+      results.push(runTest('aria-current works with aria-selected', () => {
+        tree.setCurrent('folder1/file2.txt');
+        // Focus the item to set aria-selected
+        const file2 = tree.query('folder1/file2.txt')[1];
+        const li = tree.list.querySelector('li[aria-current="true"]');
+        li.querySelector('button').focus();
+        
+        return li.getAttribute('aria-current') === 'true' && 
+               li.getAttribute('aria-selected') === 'true';
+      }));
+
+      // Test 6: Invalid path handling
+      results.push(runTest('Handle invalid path gracefully', () => {
+        const prevCurrent = tree.currentTarget;
+        tree.setCurrent('nonexistent/path');
+        return tree.currentTarget === prevCurrent; // Should remain unchanged
+      }));
+
+      displayResults(results);
+    };
+
+    // Initial display
+    updateCurrentDisplay();
+  </script>
+</body>
+</html>
