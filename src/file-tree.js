@@ -93,6 +93,10 @@ const get = file => {
   let li = nodes.get(file);
   if (!li) {
     li = createElement('li', { className: /^text\//.test(type) ? 'text' : 'file' });
+    // Add role="treeitem" to all li elements (files and folders)
+    li.setAttribute('role', 'treeitem');
+    // Add aria-selected="false" attribute to all treeitem elements when created
+    li.setAttribute('aria-selected', 'false');
     li.appendChild(createElement('button', { textContent: name, onfocus })).dataset.bytes = bytes(+size || 0);
     nodes.set(file, li);
     refs.set(li, file);
@@ -108,7 +112,22 @@ const focused = item => {
 const nested = ({ children }) => reduce.call(children, count, 0);
 
 const onfocus = ({ currentTarget }) => {
-  selected = refs.get(currentTarget.closest('li'));
+  const li = currentTarget.closest('li');
+  const newSelected = refs.get(li);
+  
+  // If there was a previously selected item, set its aria-selected to false
+  if (selected) {
+    const previousLi = nodes.get(selected);
+    if (previousLi) {
+      previousLi.setAttribute('aria-selected', 'false');
+    }
+  }
+  
+  // Set aria-selected="true" on the focused item
+  li.setAttribute('aria-selected', 'true');
+  
+  // Update the selected reference
+  selected = newSelected;
 };
 
 const ordered = (a, b) => {
@@ -146,6 +165,7 @@ const refs = new WeakMap;
 
 let transitioning = false;
 let selected = null;
+let currentTarget = null;
 
 export class File extends GlobalFile {
   /** @extends {GlobalFile} */
@@ -171,7 +191,15 @@ export class Folder {
   constructor(name) {
     this.#name = encodeURIComponent(name);
     this.#ul = createElement('ul');
+    // Add role="group" to nested ul elements
+    this.#ul.setAttribute('role', 'group');
     const li = createElement('li', { className: 'folder' });
+    // Add role="treeitem" to folder li elements
+    li.setAttribute('role', 'treeitem');
+    // Add aria-expanded="false" attribute to folder li elements when they are created
+    li.setAttribute('aria-expanded', 'false');
+    // Add aria-selected="false" attribute to all treeitem elements when created
+    li.setAttribute('aria-selected', 'false');
     li.append(createElement('button', { textContent: name }), this.#ul);
     nodes.set(this, li);
     refs.set(li, this);
@@ -249,7 +277,22 @@ export class Folder {
   remove(...items) {
     const list = this.#items;
     for (const item of items) {
-      if (selected === item) selected = null;
+      if (selected === item) {
+        // Clear aria-selected when removing the selected item
+        const li = nodes.get(item);
+        if (li) {
+          li.setAttribute('aria-selected', 'false');
+        }
+        selected = null;
+      }
+      if (currentTarget === item) {
+        // Clear aria-current when removing the current target item
+        const li = nodes.get(item);
+        if (li) {
+          li.removeAttribute('aria-current');
+        }
+        currentTarget = null;
+      }
       const i = list.indexOf(item);
       if (i < 0) error(item, this);
       list.splice(i, 1);
@@ -334,6 +377,8 @@ export class Tree extends HTMLElement {
     const shadowRoot = this.attachShadow({ mode: 'open' });
     const { list } = (this.#root = new Folder('#root'));
     shadowRoot.adoptedStyleSheets.push(css);
+    // Add role="tree" to the root ul element
+    list.setAttribute('role', 'tree');
     if (prev) {
       prev.remove();
       for (const { name, value } of prev.attributes) list.setAttribute(name, value);
@@ -356,6 +401,50 @@ export class Tree extends HTMLElement {
 
   /** @type {Item|null} the last selected item */
   get selected() { return selected }
+
+  /** @type {Item|null} the current target item (for deep-linking) */
+  get currentTarget() { return currentTarget }
+
+  /**
+   * Set aria-current="true" on a specific tree item
+   * @param {Item|string|null} item - The item to set as current, or null to clear
+   * @returns {Tree}
+   */
+  setCurrent(item) {
+    // Clear previous aria-current
+    if (currentTarget) {
+      const previousLi = nodes.get(currentTarget);
+      if (previousLi) {
+        previousLi.removeAttribute('aria-current');
+      }
+    }
+
+    // Set new aria-current
+    if (item) {
+      // Handle string path
+      if (typeof item === 'string') {
+        const chunks = this.query(item);
+        if (!chunks) {
+          console.warn(`Item not found: ${item}`);
+          return this;
+        }
+        item = chunks[chunks.length - 1];
+      }
+
+      const li = nodes.get(item);
+      if (li) {
+        li.setAttribute('aria-current', 'true');
+        currentTarget = item;
+      } else {
+        console.warn('Item not found in tree');
+        return this;
+      }
+    } else {
+      currentTarget = null;
+    }
+
+    return this;
+  }
 
   /**
    * @param  {...(string|Literal|Item)} items
@@ -483,6 +572,9 @@ async function click(event) {
       });
     }
     li.classList.toggle('opened');
+    // Update aria-expanded attribute when folders are opened/closed
+    const isOpened = is(li, 'opened');
+    li.setAttribute('aria-expanded', isOpened ? 'true' : 'false');
   }
   if (button !== document.activeElement) button.focus();
 }

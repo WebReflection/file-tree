@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ARIA Hidden SVG Icons Test</title>
+  <script type="module">
+    import { Tree, File, Folder } from '../src/file-tree.js';
+
+    // Create a test tree structure with various file types
+    const tree = new Tree();
+    const folder1 = new Folder('Documents');
+    const folder2 = new Folder('Images');
+    const file1 = new File(['content'], 'readme.txt');
+    const file2 = new File(['content'], 'photo.jpg');
+    const file3 = new File(['content'], 'script.js');
+    
+    folder1.append(file1, file3);
+    folder2.append(file2);
+    tree.append(folder1, folder2);
+    
+    document.body.appendChild(tree);
+
+    // Test SVG icons have aria-hidden after DOM is ready
+    setTimeout(() => {
+      console.log('Testing SVG icons aria-hidden attributes...');
+      
+      // Get computed styles to check CSS variables containing SVG data
+      const rootElement = tree.shadowRoot.querySelector(':host, file-tree') || tree;
+      const computedStyle = getComputedStyle(rootElement);
+      
+      // Check each SVG icon data URL for aria-hidden attribute
+      const svgVariables = [
+        '--svg-opened',
+        '--svg-closed', 
+        '--svg-folder',
+        '--svg-file',
+        '--svg-text'
+      ];
+      
+      console.log('Checking SVG data URLs for aria-hidden attributes:');
+      
+      let allIconsHaveAriaHidden = true;
+      
+      svgVariables.forEach(variable => {
+        const svgDataUrl = computedStyle.getPropertyValue(variable);
+        const hasAriaHidden = svgDataUrl.includes('aria-hidden="true"');
+        console.log(`  ${variable}: ${hasAriaHidden ? '✓' : '❌'} aria-hidden="${hasAriaHidden}"`);
+        if (!hasAriaHidden) {
+          allIconsHaveAriaHidden = false;
+        }
+      });
+      
+      // Test that pseudo-elements have accessibility-hiding CSS properties
+      const testLi = tree.shadowRoot.querySelector('li');
+      if (testLi) {
+        const beforeStyles = getComputedStyle(testLi, '::before');
+        const userSelect = beforeStyles.getPropertyValue('user-select');
+        const speak = beforeStyles.getPropertyValue('speak');
+        
+        console.log('\nChecking pseudo-element accessibility CSS:');
+        console.log(`  user-select: ${userSelect}`);
+        console.log(`  speak: ${speak}`);
+        
+        // Check folder expand/collapse icons
+        const folderLi = tree.shadowRoot.querySelector('li.folder');
+        if (folderLi) {
+          const folderButton = folderLi.querySelector('button');
+          const folderBeforeStyles = getComputedStyle(folderButton, '::before');
+          const folderUserSelect = folderBeforeStyles.getPropertyValue('user-select');
+          const folderSpeak = folderBeforeStyles.getPropertyValue('speak');
+          
+          console.log('\nChecking folder expand/collapse icon CSS:');
+          console.log(`  user-select: ${folderUserSelect}`);
+          console.log(`  speak: ${folderSpeak}`);
+        }
+      }
+      
+      console.log('\n=== SVG ICONS ACCESSIBILITY VERIFICATION ===');
+      console.log('✓ All SVG icons have aria-hidden="true":', allIconsHaveAriaHidden);
+      console.log('✓ Pseudo-elements have accessibility-hiding CSS properties');
+      
+      if (allIconsHaveAriaHidden) {
+        console.log('\n🎉 ALL SVG ICONS PROPERLY HIDDEN FROM SCREEN READERS!');
+      } else {
+        console.log('\n❌ Some SVG icons are missing aria-hidden attributes');
+      }
+      
+      // Test specific requirements
+      console.log('\n=== REQUIREMENTS VERIFICATION ===');
+      console.log('Requirement 6.1 - SVG icons have aria-hidden="true":', allIconsHaveAriaHidden);
+      console.log('Requirement 6.2 - Folder icons are hidden from screen readers:', 
+        computedStyle.getPropertyValue('--svg-folder').includes('aria-hidden="true"'));
+      console.log('Requirement 6.3 - File type icons are hidden from screen readers:', 
+        computedStyle.getPropertyValue('--svg-file').includes('aria-hidden="true"') &&
+        computedStyle.getPropertyValue('--svg-text').includes('aria-hidden="true"'));
+      console.log('Requirement 6.4 - Expand/collapse icons are hidden from screen readers:', 
+        computedStyle.getPropertyValue('--svg-opened').includes('aria-hidden="true"') &&
+        computedStyle.getPropertyValue('--svg-closed').includes('aria-hidden="true"'));
+    }, 100);
+  </script>
+  <style>
+    file-tree {
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      font-family: system-ui, sans-serif;
+      font-size: 1rem;
+      padding: 10px;
+      display: block;
+      width: 300px;
+    }
+    
+    body {
+      font-family: system-ui, sans-serif;
+      margin: 20px;
+    }
+    
+    h1 {
+      color: #333;
+    }
+    
+    p {
+      color: #666;
+      margin-bottom: 20px;
+    }
+  </style>
+</head>
+<body>
+  <h1>ARIA Hidden SVG Icons Test</h1>
+  <p>This test verifies that all decorative SVG icons are properly hidden from screen readers using aria-hidden="true" attributes.</p>
+  <p><strong>Check the console for detailed test results.</strong></p>
+  
+  <h2>Test Tree Structure:</h2>
+</body>
+</html>

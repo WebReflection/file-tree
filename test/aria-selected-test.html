@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ARIA Selected State Test</title>
+  <script type="module">
+    import { Tree, File, Folder } from '../src/file-tree.js';
+
+    // Create a test tree structure
+    const tree = new Tree();
+    const folder1 = new Folder('Documents');
+    const folder2 = new Folder('Images');
+    const file1 = new File(['content'], 'readme.txt');
+    const file2 = new File(['content'], 'photo.jpg');
+    const file3 = new File(['content'], 'notes.md');
+    
+    folder1.append(file1, file3);
+    folder2.append(file2);
+    tree.append(folder1, folder2);
+    
+    document.body.appendChild(tree);
+
+    // Test aria-selected state management after DOM is ready
+    setTimeout(() => {
+      console.log('Testing aria-selected state management...');
+      
+      const allLis = tree.shadowRoot.querySelectorAll('li');
+      const buttons = tree.shadowRoot.querySelectorAll('button');
+      
+      // Test 1: All items should initially have aria-selected="false"
+      console.log('\n=== TEST 1: Initial aria-selected state ===');
+      let allInitiallyFalse = true;
+      allLis.forEach((li, index) => {
+        const ariaSelected = li.getAttribute('aria-selected');
+        const buttonText = li.querySelector('button').textContent;
+        console.log(`  "${buttonText}" - aria-selected: ${ariaSelected}`);
+        if (ariaSelected !== 'false') {
+          allInitiallyFalse = false;
+        }
+      });
+      console.log('✓ All items initially have aria-selected="false":', allInitiallyFalse);
+      
+      // Test 2: Focus first item and check aria-selected state
+      console.log('\n=== TEST 2: Focus first item ===');
+      buttons[0].focus();
+      
+      setTimeout(() => {
+        let selectedCount = 0;
+        let correctSelection = true;
+        
+        allLis.forEach((li, index) => {
+          const ariaSelected = li.getAttribute('aria-selected');
+          const buttonText = li.querySelector('button').textContent;
+          console.log(`  "${buttonText}" - aria-selected: ${ariaSelected}`);
+          
+          if (ariaSelected === 'true') {
+            selectedCount++;
+            if (index !== 0) correctSelection = false; // First item should be selected
+          }
+        });
+        
+        console.log('✓ Only one item has aria-selected="true":', selectedCount === 1);
+        console.log('✓ First item is selected:', correctSelection);
+        
+        // Test 3: Focus second item and check state change
+        console.log('\n=== TEST 3: Focus second item ===');
+        buttons[1].focus();
+        
+        setTimeout(() => {
+          let selectedCount2 = 0;
+          let correctSelection2 = true;
+          
+          allLis.forEach((li, index) => {
+            const ariaSelected = li.getAttribute('aria-selected');
+            const buttonText = li.querySelector('button').textContent;
+            console.log(`  "${buttonText}" - aria-selected: ${ariaSelected}`);
+            
+            if (ariaSelected === 'true') {
+              selectedCount2++;
+              if (index !== 1) correctSelection2 = false; // Second item should be selected
+            }
+          });
+          
+          console.log('✓ Only one item has aria-selected="true":', selectedCount2 === 1);
+          console.log('✓ Second item is selected:', correctSelection2);
+          
+          // Test 4: Focus third item and verify state management
+          console.log('\n=== TEST 4: Focus third item ===');
+          buttons[2].focus();
+          
+          setTimeout(() => {
+            let selectedCount3 = 0;
+            let correctSelection3 = true;
+            
+            allLis.forEach((li, index) => {
+              const ariaSelected = li.getAttribute('aria-selected');
+              const buttonText = li.querySelector('button').textContent;
+              console.log(`  "${buttonText}" - aria-selected: ${ariaSelected}`);
+              
+              if (ariaSelected === 'true') {
+                selectedCount3++;
+                if (index !== 2) correctSelection3 = false; // Third item should be selected
+              }
+            });
+            
+            console.log('✓ Only one item has aria-selected="true":', selectedCount3 === 1);
+            console.log('✓ Third item is selected:', correctSelection3);
+            
+            // Final verification
+            console.log('\n=== ARIA SELECTED STATE VERIFICATION ===');
+            const allTestsPassed = allInitiallyFalse && 
+                                 selectedCount === 1 && correctSelection &&
+                                 selectedCount2 === 1 && correctSelection2 &&
+                                 selectedCount3 === 1 && correctSelection3;
+            
+            if (allTestsPassed) {
+              console.log('\n🎉 ALL ARIA-SELECTED TESTS PASSED!');
+              console.log('Requirements 5.1, 5.2, 5.3 are satisfied:');
+              console.log('  ✓ 5.1: Selected items have aria-selected="true"');
+              console.log('  ✓ 5.2: Non-selected items have aria-selected="false"');
+              console.log('  ✓ 5.3: Only one item has aria-selected="true" at a time');
+            } else {
+              console.log('\n❌ Some aria-selected tests failed');
+            }
+          }, 50);
+        }, 50);
+      }, 50);
+    }, 100);
+  </script>
+  <style>
+    file-tree {
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      font-family: system-ui, sans-serif;
+      font-size: 1rem;
+      padding: 10px;
+      display: block;
+      width: 300px;
+    }
+    
+    body {
+      font-family: system-ui, sans-serif;
+      margin: 20px;
+    }
+    
+    h1 {
+      color: #333;
+    }
+    
+    p {
+      color: #666;
+    }
+  </style>
+</head>
+<body>
+  <h1>ARIA Selected State Test</h1>
+  <p>This test verifies that aria-selected attributes are properly managed when items are focused.</p>
+  <p>Check the console for detailed test results.</p>
+  
+  <h2>Instructions:</h2>
+  <ol>
+    <li>Open the browser console</li>
+    <li>The test will automatically run and show results</li>
+    <li>You can also manually click on different items to test focus behavior</li>
+  </ol>
+</body>
+</html>

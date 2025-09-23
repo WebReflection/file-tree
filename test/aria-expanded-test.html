@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ARIA Expanded Test</title>
+  <script type="module">
+    import { Tree, File, Folder } from '../src/file-tree.js';
+
+    // Create a test tree structure
+    const tree = new Tree();
+    const folder1 = new Folder('Documents');
+    const folder2 = new Folder('Images');
+    const file1 = new File(['content'], 'readme.txt');
+    const file2 = new File(['content'], 'photo.jpg');
+    
+    folder1.append(file1);
+    folder2.append(file2);
+    tree.append(folder1, folder2);
+    
+    document.body.appendChild(tree);
+
+    // Test aria-expanded functionality after DOM is ready
+    setTimeout(() => {
+      console.log('Testing aria-expanded functionality...');
+      
+      const shadowRoot = tree.shadowRoot;
+      const folderLis = shadowRoot.querySelectorAll('li.folder');
+      const fileLis = shadowRoot.querySelectorAll('li.file, li.text');
+      
+      console.log('\n=== INITIAL STATE ===');
+      
+      // Test that folders have aria-expanded="false" initially
+      console.log('Folder elements with aria-expanded:');
+      folderLis.forEach((li, index) => {
+        const ariaExpanded = li.getAttribute('aria-expanded');
+        const buttonText = li.querySelector('button').textContent;
+        console.log(`  ${index + 1}. "${buttonText}" - aria-expanded: ${ariaExpanded}`);
+      });
+      
+      // Test that files do NOT have aria-expanded attribute
+      console.log('File elements (should NOT have aria-expanded):');
+      fileLis.forEach((li, index) => {
+        const ariaExpanded = li.getAttribute('aria-expanded');
+        const buttonText = li.querySelector('button').textContent;
+        console.log(`  ${index + 1}. "${buttonText}" - aria-expanded: ${ariaExpanded || 'null (correct)'}`);
+      });
+      
+      // Verify initial requirements
+      const foldersHaveAriaExpandedFalse = Array.from(folderLis).every(li => li.getAttribute('aria-expanded') === 'false');
+      const filesDoNotHaveAriaExpanded = Array.from(fileLis).every(li => !li.hasAttribute('aria-expanded'));
+      
+      console.log('\n=== INITIAL STATE VERIFICATION ===');
+      console.log('✓ All folders have aria-expanded="false":', foldersHaveAriaExpandedFalse);
+      console.log('✓ Files do NOT have aria-expanded attribute:', filesDoNotHaveAriaExpanded);
+      
+      // Test clicking to expand/collapse
+      if (folderLis.length > 0) {
+        const firstFolder = folderLis[0];
+        const firstFolderButton = firstFolder.querySelector('button');
+        
+        console.log('\n=== TESTING FOLDER CLICK ===');
+        console.log('Clicking first folder to expand...');
+        
+        // Click to expand
+        firstFolderButton.click();
+        
+        setTimeout(() => {
+          const ariaExpandedAfterClick = firstFolder.getAttribute('aria-expanded');
+          const isOpened = firstFolder.classList.contains('opened');
+          
+          console.log(`After click - aria-expanded: ${ariaExpandedAfterClick}, opened class: ${isOpened}`);
+          
+          // Click again to collapse
+          console.log('Clicking again to collapse...');
+          firstFolderButton.click();
+          
+          setTimeout(() => {
+            const ariaExpandedAfterSecondClick = firstFolder.getAttribute('aria-expanded');
+            const isOpenedAfterSecond = firstFolder.classList.contains('opened');
+            
+            console.log(`After second click - aria-expanded: ${ariaExpandedAfterSecondClick}, opened class: ${isOpenedAfterSecond}`);
+            
+            // Final verification
+            const toggleWorksCorrectly = 
+              ariaExpandedAfterClick === 'true' && 
+              ariaExpandedAfterSecondClick === 'false';
+            
+            console.log('\n=== FINAL VERIFICATION ===');
+            console.log('✓ aria-expanded toggles correctly:', toggleWorksCorrectly);
+            
+            if (foldersHaveAriaExpandedFalse && filesDoNotHaveAriaExpanded && toggleWorksCorrectly) {
+              console.log('\n🎉 ALL ARIA-EXPANDED FUNCTIONALITY CORRECTLY IMPLEMENTED!');
+            } else {
+              console.log('\n❌ Some aria-expanded functionality is missing or incorrect');
+            }
+          }, 50);
+        }, 50);
+      }
+    }, 100);
+  </script>
+  <style>
+    file-tree {
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      font-family: system-ui, sans-serif;
+      font-size: 1rem;
+      padding: 10px;
+      display: block;
+      width: 300px;
+    }
+  </style>
+</head>
+<body>
+  <h1>ARIA Expanded Test</h1>
+  <p>Check the console for test results. Try clicking on folders to test aria-expanded state changes.</p>
+</body>
+</html>
